@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalkulator Bunga Riil | Itungan</title>
+<meta name="description" content="Cek apakah bunga tabungan atau depositomu mengalahkan inflasi. Simulasi bunga riil setelah pajak, pakai data BPS.">
+<meta property="og:title" content="Kalkulator Bunga Riil | Itungan">
+<meta property="og:description" content="Cek apakah bunga tabungan atau depositomu mengalahkan inflasi. Gratis, tanpa daftar.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="id_ID">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light dark;
+    --bg: #F5F7FA;
+    --panel: #FFFFFF;
+    --ink: #0B1220;
+    --mute: #52607A;
+    --line: #DCE3EE;
+    --field: #EEF2F8;
+    --teal: #0E8F83;
+    --amber: #B45309;
+    --gap: rgba(180, 83, 9, 0.85);
+    --gain: rgba(14, 143, 131, 0.9);
+    --display: "Bricolage Grotesque", "Segoe UI Variable Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0B1220; --panel: #111B2E; --ink: #F1F5F9; --mute: #94A3B8; --line: #1E2B44; --field: #162033;
+      --teal: #14B8A6; --amber: #F59E0B; --gap: rgba(245, 158, 11, 0.9); --gain: rgba(20, 184, 166, 0.9);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B1220; --panel: #111B2E; --ink: #F1F5F9; --mute: #94A3B8; --line: #1E2B44; --field: #162033;
+    --teal: #14B8A6; --amber: #F59E0B; --gap: rgba(245, 158, 11, 0.9); --gain: rgba(20, 184, 166, 0.9);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body);
+    font-size: 17px; line-height: 1.5; -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 22px 16px 48px; }
+  .brand { font-family: var(--display); font-weight: 800; font-size: 20px; letter-spacing: -0.01em; color: var(--teal); margin: 0 0 18px; }
+  h1 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 8.5vw, 42px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 10px; }
+  .lede { color: var(--mute); margin: 0 0 24px; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label, .lab { display: block; font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+  .hint { color: var(--mute); font-size: 14px; margin-top: 6px; }
+  .inputwrap { display: flex; align-items: center; background: var(--field); border: 1px solid transparent; border-radius: 10px; }
+  .inputwrap:focus-within { border-color: var(--teal); }
+  .inputwrap .unit { padding: 0 0 0 14px; color: var(--mute); font-weight: 600; }
+  .inputwrap .unit.end { padding: 0 14px 0 0; }
+  input[type="text"], select {
+    flex: 1; min-width: 0; width: 100%; font: inherit; font-size: 18px; color: var(--ink); background: transparent;
+    border: 0; outline: 0; padding: 12px 14px; min-height: 48px;
+  }
+  .inputwrap input[type="text"] { padding-left: 8px; }
+  .inputwrap .unit.end + input, .inputwrap input.pad0 { padding-left: 14px; }
+  select { background: var(--field); border-radius: 10px; cursor: pointer; }
+  select:focus-visible, button:focus-visible, input[type="range"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip {
+    font: inherit; font-size: 15px; font-weight: 600; color: var(--ink); background: transparent; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; min-height: 44px;
+  }
+  .chip[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .rangeRow { display: flex; align-items: center; gap: 14px; }
+  input[type="range"] { flex: 1; accent-color: var(--teal); height: 44px; }
+  .yearsOut { font-family: var(--display); font-weight: 800; font-size: 22px; min-width: 76px; text-align: right; }
+
+  .hero { text-align: left; }
+  .heroLab { color: var(--mute); font-size: 15px; font-weight: 600; margin: 0; }
+  .heroNum { font-family: var(--display); font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-size: clamp(56px, 19vw, 92px); margin: 6px 0 10px; font-variant-numeric: tabular-nums; }
+  .heroNum.neg { color: var(--amber); }
+  .heroNum.pos { color: var(--teal); }
+  .verdict { font-size: 19px; font-weight: 600; line-height: 1.35; margin: 0 0 4px; }
+  .sub { color: var(--mute); margin: 0; font-size: 15px; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
+  .stat { background: var(--field); border-radius: 10px; padding: 12px 14px; }
+  .stat dt { color: var(--mute); font-size: 14px; margin: 0 0 4px; }
+  .stat dd { margin: 0; font-family: var(--display); font-weight: 600; font-size: 19px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .stat dd.neg { color: var(--amber); }
+  .stat dd.pos { color: var(--teal); }
+  .be { margin: 14px 0 0; font-size: 16px; }
+  .be strong { font-family: var(--display); font-weight: 800; }
+
+  h2 { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .chartNote { color: var(--mute); font-size: 14px; margin: 0 0 8px; }
+  .chartScroll { overflow-x: auto; }
+  svg.chart { display: block; width: 100%; height: auto; min-width: 300px; }
+  .chart text { font-family: var(--body); fill: var(--mute); font-size: 11.5px; }
+  .chart .val { font-weight: 600; fill: var(--ink); font-size: 12px; }
+  .chart .zero { stroke: var(--ink); stroke-opacity: 0.55; stroke-width: 1.5; }
+  .chartSum { margin: 10px 0 0; font-size: 16px; }
+
+  .notes { font-size: 14.5px; color: var(--mute); }
+  .notes h2 { color: var(--ink); font-size: 18px; }
+  .notes ul { margin: 6px 0 0; padding-left: 20px; }
+  .notes li { margin-bottom: 6px; }
+  footer { color: var(--mute); font-size: 14px; margin-top: 8px; }
+  footer strong { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="brand">Itungan</p>
+  <h1>Bunga tabunganmu menang lawan inflasi?</h1>
+  <p class="lede">Bunga riil adalah bunga setelah pajak, dikurangi kenaikan harga. Isi angkamu, lihat daya belimu naik atau turun.</p>
+
+  <section class="panel" aria-label="Isi data simpanan">
+    <div class="field">
+      <label for="saldo">Saldo tabungan atau deposito</label>
+      <div class="inputwrap"><span class="unit">Rp</span><input id="saldo" type="text" inputmode="numeric" autocomplete="off" value="50.000.000"></div>
+    </div>
+    <div class="field">
+      <label for="bunga">Bunga per tahun (sebelum pajak)</label>
+      <div class="inputwrap"><input id="bunga" class="pad0" type="text" inputmode="decimal" autocomplete="off" value="4,00"><span class="unit end">%</span></div>
+      <p class="hint">Contoh saja. Isi sesuai bunga di bankmu.</p>
+    </div>
+    <div class="field">
+      <label for="inflasi">Inflasi per tahun</label>
+      <div class="inputwrap"><input id="inflasi" class="pad0" type="text" inputmode="decimal" autocomplete="off" value="3,28"><span class="unit end">%</span></div>
+      <div class="chips" role="group" aria-label="Pilih acuan inflasi">
+        <button type="button" class="chip" data-inf="3,28" aria-pressed="true">Umum 3,28%</button>
+        <button type="button" class="chip" data-inf="4,37" aria-pressed="false">Pangan 4,37%</button>
+        <button type="button" class="chip" data-inf="2,84" aria-pressed="false">Inti 2,84%</button>
+      </div>
+      <p class="hint">Inflasi tahunan September 2026 (BPS). Pangan = kelompok makanan, minuman, dan tembakau.</p>
+    </div>
+    <div class="field">
+      <label for="pajakMode">Pajak bunga</label>
+      <select id="pajakMode">
+        <option value="auto" selected>Otomatis sesuai saldo</option>
+        <option value="20">Selalu kena pajak 20%</option>
+        <option value="0">Bebas pajak</option>
+      </select>
+      <p class="hint" id="pajakInfo"></p>
+    </div>
+    <div class="field">
+      <span class="lab" id="lblTahun">Lama menabung</span>
+      <div class="rangeRow">
+        <input id="tahun" type="range" min="1" max="10" step="1" value="3" aria-labelledby="lblTahun">
+        <output class="yearsOut" id="tahunOut" for="tahun">3 tahun</output>
+      </div>
+    </div>
+  </section>
+
+  <div aria-live="polite">
+    <section class="panel hero" aria-label="Hasil">
+      <p class="heroLab">Bunga riil per tahun</p>
+      <p class="heroNum" id="heroNum">0,00%</p>
+      <p class="verdict" id="verdict"></p>
+      <p class="sub" id="sub"></p>
+    </section>
+
+    <section class="panel" aria-label="Rincian satu tahun">
+      <h2>Setahun ke depan</h2>
+      <p class="chartNote">Pakai angkamu di atas.</p>
+      <dl class="stats">
+        <div class="stat"><dt>Bunga bersih (setelah pajak)</dt><dd id="sBunga">-</dd></div>
+        <div class="stat"><dt>Saldo setelah 1 tahun</dt><dd id="sSaldo">-</dd></div>
+        <div class="stat"><dt>Dibutuhkan agar daya beli sama</dt><dd id="sButuh">-</dd></div>
+        <div class="stat"><dt>Selisih</dt><dd id="sSelisih">-</dd></div>
+      </dl>
+      <p class="be" id="be"></p>
+    </section>
+
+    <section class="panel" aria-label="Grafik selisih per tahun">
+      <h2>Selisih terhadap daya beli awal</h2>
+      <p class="chartNote">Saldo kamu dikurangi uang yang dibutuhkan agar belanja bulananmu tetap terbeli. Batang ke bawah artinya daya beli tergerus.</p>
+      <div class="chartScroll"><svg class="chart" id="chart" viewBox="0 0 360 240" role="img" aria-label="Grafik batang selisih saldo terhadap kebutuhan menjaga daya beli per tahun"></svg></div>
+      <p class="chartSum" id="chartSum"></p>
+    </section>
+  </div>
+
+  <section class="panel notes" aria-label="Asumsi dan sumber">
+    <h2>Asumsi dan sumber</h2>
+    <ul>
+      <li>Bunga dan inflasi dianggap tetap, bunga bersih diputar lagi tiap tahun, tanpa biaya admin.</li>
+      <li>Rumus: bunga riil = (1 + bunga bersih) / (1 + inflasi) − 1.</li>
+      <li>Pajak: PPh final 20% dari bunga bruto. Bunga atas simpanan sampai Rp7,5 juta (bukan hasil dipecah) dikecualikan, begitu juga orang pribadi yang seluruh penghasilannya setahun tidak melebihi PTKP (PMK 212/PMK.03/2018).</li>
+      <li>Inflasi: BPS, rilis 1 Oktober 2026 (umum 3,28%, kelompok makanan, minuman, dan tembakau 4,37%). Inflasi inti 2,84% (BPS dan BI).</li>
+      <li>Simulasi edukasi, bukan saran investasi atau perpajakan.</li>
+    </ul>
+  </section>
+  <footer><strong>Itungan</strong> &ndash; ekonomi pakai data. Instagram @itungan.id</footer>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var MIN = '\u2212';
+  var THRESH = 7500000;
+
+  function parseNum(s) {
+    if (s == null) return NaN;
+    var t = String(s).replace(/\./g, '').replace(',', '.').replace(/[^0-9.\-]/g, '');
+    return t === '' ? NaN : parseFloat(t);
+  }
+  function fmtInt(n) { return Math.round(n).toLocaleString('id-ID'); }
+  function rp(n) { var a = Math.abs(n); return (n < 0 && Math.round(a) > 0 ? MIN : '') + 'Rp' + fmtInt(a); }
+  function pct(n, d) { var s = Math.abs(n).toFixed(d == null ? 2 : d).replace('.', ','); return (n < 0 && parseFloat(Math.abs(n).toFixed(d == null ? 2 : d)) > 0 ? MIN : '') + s + '%'; }
+  function short(n) {
+    var a = Math.abs(n), sign = n < 0 && a >= 500 ? MIN : '', v;
+    if (a >= 1e9) v = (a / 1e9).toFixed(2).replace('.', ',') + ' M';
+    else if (a >= 1e6) v = (a / 1e6).toFixed(2).replace('.', ',') + ' jt';
+    else v = Math.round(a / 1e3) + ' rb';
+    return sign + 'Rp' + v;
+  }
+  function cls(el, n) { el.classList.remove('neg', 'pos'); if (Math.round(n) < 0) el.classList.add('neg'); else if (Math.round(n) > 0) el.classList.add('pos'); }
+
+  var saldoEl = $('saldo'), bungaEl = $('bunga'), infEl = $('inflasi'), modeEl = $('pajakMode'), tahunEl = $('tahun');
+
+  saldoEl.addEventListener('input', function () {
+    var d = saldoEl.value.replace(/\D/g, '').slice(0, 13);
+    saldoEl.value = d ? parseInt(d, 10).toLocaleString('id-ID') : '';
+    update();
+  });
+  function decimalGuard(el) {
+    el.addEventListener('input', function () {
+      var v = el.value.replace(/[^0-9,\.]/g, '').replace('.', ',');
+      var i = v.indexOf(',');
+      if (i !== -1) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/,/g, '').slice(0, 2);
+      el.value = v.slice(0, 6);
+      if (el === infEl) syncChips();
+      update();
+    });
+  }
+  decimalGuard(bungaEl); decimalGuard(infEl);
+  modeEl.addEventListener('change', update);
+  tahunEl.addEventListener('input', update);
+
+  var chips = document.querySelectorAll('.chip');
+  function syncChips() {
+    var cur = parseNum(infEl.value);
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].setAttribute('aria-pressed', parseNum(chips[i].getAttribute('data-inf')) === cur ? 'true' : 'false');
+    }
+  }
+  for (var c = 0; c < chips.length; c++) {
+    chips[c].addEventListener('click', function (e) {
+      infEl.value = e.currentTarget.getAttribute('data-inf');
+      syncChips(); update();
+    });
+  }
+
+  function compute() {
+    var S = parseNum(saldoEl.value), r = parseNum(bungaEl.value) / 100, i = parseNum(infEl.value) / 100;
+    var N = parseInt(tahunEl.value, 10), mode = modeEl.value;
+    if (!(S > 0) || isNaN(r) || isNaN(i)) return null;
+    var tau = mode === 'auto' ? (S > THRESH ? 0.2 : 0) : (mode === '20' ? 0.2 : 0);
+    var rn = r * (1 - tau);
+    var real = (1 + rn) / (1 + i) - 1;
+    var series = [];
+    for (var t = 1; t <= N; t++) {
+      var bal = S * Math.pow(1 + rn, t), need = S * Math.pow(1 + i, t);
+      series.push({ t: t, bal: bal, need: need, gap: bal - need });
+    }
+    return { S: S, r: r, i: i, N: N, tau: tau, rn: rn, real: real, series: series, be: tau < 1 ? i / (1 - tau) : NaN };
+  }
+
+  function drawChart(m) {
+    var svg = $('chart'), W = 360, H = 240, padL = 12, padR = 12, top = 34, bottom = 52;
+    var plotH = H - top - bottom, gaps = m.series.map(function (p) { return p.gap; });
+    var vmax = Math.max.apply(null, gaps.concat([0])), vmin = Math.min.apply(null, gaps.concat([0]));
+    var span = (vmax - vmin) || 1;
+    var zeroY = top + (vmax / span) * plotH;
+    var N = m.N, sw = (W - padL - padR) / N, bw = Math.min(34, sw * 0.58);
+    var out = '<line class="zero" x1="' + padL + '" y1="' + zeroY.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zeroY.toFixed(1) + '"/>';
+    m.series.forEach(function (p) {
+      var x = padL + (p.t - 1) * sw + (sw - bw) / 2, h = Math.abs(p.gap) / span * plotH;
+      var y = p.gap >= 0 ? zeroY - h : zeroY;
+      var fill = p.gap >= 0 ? 'var(--gain)' : 'var(--gap)';
+      out += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(h, 0.5).toFixed(1) + '" rx="2" fill="' + fill + '"/>';
+      var showLab = N <= 5 || p.t === N;
+      if (showLab && Math.round(p.gap) !== 0) {
+        var ly = p.gap >= 0 ? y - 6 : y + h + 14;
+        var anchor = 'middle', lx = x + bw / 2;
+        if (N > 1 && p.t === 1) { anchor = 'start'; lx = x; }
+        else if (N > 1 && p.t === N) { anchor = 'end'; lx = x + bw; }
+        out += '<text class="val" x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '">' + short(p.gap) + '</text>';
+      }
+      out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle">th ' + p.t + '</text>';
+    });
+    svg.innerHTML = out;
+  }
+
+  function update() {
+    var m = compute();
+    var info = $('pajakInfo');
+    var Sraw = parseNum(saldoEl.value);
+    if (modeEl.value === 'auto') {
+      info.textContent = !(Sraw > 0) ? 'Isi saldo untuk melihat pajak otomatis.' : (Sraw > THRESH ? 'Saldo di atas Rp7,5 juta: bunga dipotong PPh final 20%.' : 'Saldo sampai Rp7,5 juta: bunga tidak dipotong pajak.');
+    } else if (modeEl.value === '20') info.textContent = 'Bunga dipotong PPh final 20% dari bunga bruto.';
+    else info.textContent = 'Bunga dianggap tidak dipotong pajak.';
+    tahunEl.value = tahunEl.value;
+    $('tahunOut').textContent = tahunEl.value + ' tahun';
+
+    if (!m) {
+      $('heroNum').textContent = '-'; $('heroNum').className = 'heroNum';
+      $('verdict').textContent = 'Isi saldo, bunga, dan inflasi dulu.'; $('sub').textContent = '';
+      ['sBunga', 'sSaldo', 'sButuh', 'sSelisih'].forEach(function (id) { $(id).textContent = '-'; $(id).className = ''; });
+      $('be').textContent = ''; $('chart').innerHTML = ''; $('chartSum').textContent = '';
+      return;
+    }
+    var realPct = m.real * 100;
+    var hero = $('heroNum');
+    hero.textContent = (realPct > 0 && parseFloat(realPct.toFixed(2)) > 0 ? '+' : '') + pct(realPct);
+    hero.className = 'heroNum ' + (parseFloat(realPct.toFixed(2)) < 0 ? 'neg' : (parseFloat(realPct.toFixed(2)) > 0 ? 'pos' : ''));
+    var verdict = $('verdict');
+    var ab = Math.abs(realPct).toFixed(2).replace('.', ',');
+    if (Math.abs(realPct) < 0.005) verdict.textContent = 'Bunga bersihmu pas mengejar inflasi. Daya belimu tidak berubah.';
+    else if (realPct < 0) verdict.textContent = 'Daya beli simpananmu turun sekitar ' + ab + '% per tahun.';
+    else verdict.textContent = 'Daya beli simpananmu naik sekitar ' + ab + '% per tahun.';
+    $('sub').textContent = 'Bunga bersih ' + pct(m.rn * 100) + ' lawan inflasi ' + pct(m.i * 100) + (m.tau > 0 ? ', setelah pajak 20%.' : ', tanpa potongan pajak.');
+
+    var p1 = m.series[0], bunga = m.S * m.rn;
+    $('sBunga').textContent = rp(bunga);
+    $('sSaldo').textContent = rp(p1.bal);
+    $('sButuh').textContent = rp(p1.need);
+    var sel = $('sSelisih'); sel.textContent = rp(p1.gap); cls(sel, p1.gap);
+    var be = $('be');
+    if (isNaN(m.be)) be.textContent = '';
+    else be.innerHTML = 'Agar daya beli tidak turun, bunga bruto minimal <strong>' + pct(m.be * 100) + '</strong> per tahun' + (m.tau > 0 ? ' (sudah memperhitungkan pajak 20%).' : '.');
+
+    drawChart(m);
+    var pn = m.series[m.series.length - 1];
+    $('chartSum').textContent = 'Setelah ' + m.N + ' tahun: saldo ' + rp(pn.bal) + ', dibutuhkan ' + rp(pn.need) + ' agar daya beli sama. Selisih ' + rp(pn.gap) + '.';
+  }
+
+  syncChips();
+  update();
+})();
+</script>
+</body>
+</html>
